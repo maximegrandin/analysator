@@ -390,16 +390,15 @@ def plot_prec_spectrum(filename=None,
                      filedir=None, step=None,
                      outputdir=None,
                      title=None,
-                     draw=None, usesci=None,
-                     symlog=None,
-                     colormap=None,
-                     run=None,notime=None,wmark=None,
+                     draw=None,
+                     run=None,notitle=None,wmark=None,
                      notre=None, thick=1.0, cbtitle=None,
-                     vmin=None, vmax=None, lin=None,
-                     fmin=None, fmax=None, cbulk=None,
+                     fmin=None, fmax=None,
                      emin=None, emax=None,
                      cellcoordplot=None,cellidplot=None,
-                     dipolapprox=False, fluxfile=None
+                     dipolapprox=False, fluxfile=None,
+                     axes=None, scale=1.0,
+                     noxlabels=None, noylabels=None
                      ):    
 
     ''' Plots a precipitating ion flux energy spectrum.
@@ -410,23 +409,16 @@ def plot_prec_spectrum(filename=None,
     :kword step:        output step index, used for constructing output (and possibly input) filename
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
                         If directory does not exist, it will be created. If the string does not end in a
-                        forward slash, the final parti will be used as a perfix for the files.
-
-    :kword colormap:    colour scale for plot, use e.g. jet, viridis, plasma, inferno, magma, nipy_spectral, RdBu
+                        forward slash, the final parti will be used as a prefix for the files.
     :kword run:         run identifier, used for some default vmin,vmax values and for constructing output filename
-    :kword notime:      flag to suppress plotting simulation time in title
+    :kword notitle:      flag to suppress plotting simulation time in title
     :kword title:       string to use as title instead of map name
     :kword cbtitle:     string to use as colour bar title instead of map name
-    :kword notre:       flag to use metres (if ==1) or kilometres as axis unit
     :kword thick:       line and axis thickness, default=1.0
-    :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
-    :kword fmin,fmax:   min and max values for colour scale and colour bar of the VDFs. If no values are given,
-                        min and max values for whole plot are used.
-    :kword cbulk:       Center plot on position of bulk velocity (for this population)
-    :kword lin:         flag for using linear colour scaling instead of log
-    :kword symlog:      use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
-                        Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
-                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
+    :kword fmin,fmax:   min and max values for differntial flux (Y-axis), given in m-2 sr-1 s-1 ev-1.
+                        If no values are given, min and max values for whole plot are used.
+    :kword emin,emax:   min and max values for energy (X-axis), given in keV.
+                        If no values are given, min and max values for whole plot are used.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
     :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
 
@@ -434,6 +426,10 @@ def plot_prec_spectrum(filename=None,
     :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
     :kword dipolapprox:     Use dipolar approximation to calculate loss cone angle (default: False)
     :kword fluxfile:        Name of the file containing the flux function values
+    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+    :kword scale:       Scale text size (default=1.0)
+    :kword noxlabels:   Suppress x-axis labels and title
+    :kword noylabels:   Suppress y-axis labels and title
                             
     :returns:           Outputs an image to a file or to the screen.
 
@@ -449,8 +445,6 @@ def plot_prec_spectrum(filename=None,
 
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
-    # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
-    # watermarkimage='/homeappl/home/marbat/appl_taito/analysator/logo_color.png'
 
     if outputdir==None:
         outputdir=os.path.expandvars('$HOME/Plots/')
@@ -469,6 +463,7 @@ def plot_prec_spectrum(filename=None,
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
+    pop_label = pop
     # If population isn't defined i.e. defaults to protons, check if 
     # instead should use old version "avgs"
     if pop=="proton":
@@ -485,24 +480,13 @@ def plot_prec_spectrum(filename=None,
             exit()  
 
 
-    # Scientific notation for colorbar ticks?
-    if usesci==None:
-        usesci=1
-    
-    if colormap==None:
-        #colormap="plasma"
-        #colormap="viridis_r"
-        #colormap="inferno"
-        #colormap="seismic"
-        colormap="plasma_r"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
-
-    fontsize=11 # Most text
-    fontsize2=13 # Time title
-    fontsize3=8 # Colour bar ticks
+    fontsize=8*scale # Most text
+    fontsize2=10*scale # Time title
+    fontsize3=5*scale # Colour bar ticks
+    fontsize4=12*scale # Big label
 
     # Plot title with time
-    if notime==None:        
+    if notitle==None:        
         timeval=f.read_parameter("time")
         if timeval == None:
             timeval=f.read_parameter("t")
@@ -542,36 +526,16 @@ def plot_prec_spectrum(filename=None,
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
-
-    vminuse=vmin
-    vmaxuse=vmax
-
-    # Lin or log colour scaling, defaults to log
-    if lin==None:
-        # Special SymLogNorm case
-        if symlog!=None:
-            norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
-            maxlog=int(np.ceil(np.log10(vmaxuse)))
-            minlog=int(np.ceil(np.log10(-vminuse)))
-            logthresh=int(np.floor(np.log10(linthresh)))
-            logstep=1
-            ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
-                    +[0.0]
-                    +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
-        else:
-            norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
-    else:
-        # Linear
-        levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
-        norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse,vmaxuse,num=7)            
+          
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if draw!=None:
-        plt.switch_backend('TkAgg')
-    else:
-        plt.switch_backend('Agg')  
+    if axes==None: # If axes are provided, leave backend as-is.
+        if draw!=None:
+            if str(matplotlib.get_backend()) is not 'TkAgg':
+                plt.switch_backend('TkAgg')
+        else:
+            if str(matplotlib.get_backend()) is not 'Agg':
+                plt.switch_backend('Agg')  
 
 
     # Select image shape to match plotted area, at least somewhat.
@@ -579,7 +543,8 @@ def plot_prec_spectrum(filename=None,
     figsize = [4.0,3.15]
 
     # Create 300 dpi image of suitable size
-    fig = plt.figure(figsize=figsize,dpi=300)
+    if axes==None:
+        fig = plt.figure(figsize=figsize,dpi=300)
     
     # Get coordinates if cellIDs were given as input
     if cellidplot==None:
@@ -591,6 +556,10 @@ def plot_prec_spectrum(filename=None,
         datamap = np.array([])
         latitudes = np.array([])
 
+        # Ensure that we now have a list of cellids instead of just a single cellid
+        if type(cellidplot) is not list:
+            print("Converting given cellid to a single-element list of cellids.")
+            cellidplot = [cellidplot]
 
         for cellid in cellidplot:
             xCid,yCid,zCid = f.get_cell_coordinates(cellid)
@@ -622,42 +591,62 @@ def plot_prec_spectrum(filename=None,
             # Reduction of the precipitating particle data
             (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid,losscone=alph0,pop=pop,emin=emin,emax=emax,hemisphere=hemisphere)
 
+            if axes==None:
+                ax1 = plt.gca() # get current axes
+            else:
+                ax1=axes
+
             # Plots the histogram
             if wentFine:
-                fig1=plt.loglog(energy,flux,'o-')
-#                print("flux = "+str(flux)+"\n energy = "+str(energy))
+                ax1.loglog(energy,flux,'o-')
                 datamap = np.append(datamap,flux)
                 latitudes = np.append(latitudes,latmag_inv)
             else:
                 print("There was a problem making the histogram")
                 return
           
-            ax1 = plt.gca() # get current axes
           
             # Title and plot limits
-            ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
-            plt.xlim([emin,emax])
-            plt.ylim([fmin,fmax])
+            if notitle==None:
+                ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
+            ax1.set_xlim([emin,emax])
+            ax1.set_ylim([fmin,fmax])
           
             for axis in ['top','bottom','left','right']:
                 ax1.spines[axis].set_linewidth(thick)
             ax1.xaxis.set_tick_params(width=thick,length=3)
             ax1.yaxis.set_tick_params(width=thick,length=3)
-          
-          
-            plt.xlabel('E [keV]',fontsize=fontsize,weight='black')
-            plt.ylabel(r'Flux ['+pop+' cm$^{-2}$ s$^{-1}$ sr$^{-1}$ eV$^{-1}$]',fontsize=fontsize,weight='black')
-          
-            plt.xticks(fontsize=fontsize,fontweight='black')
-            plt.yticks(fontsize=fontsize,fontweight='black')
+              
+
+            if noxlabels==None:
+                ax1.set_xlabel('E [keV]',fontsize=fontsize,weight='black')
+                for item in ax1.get_xticklabels():
+                    item.set_fontsize(fontsize)
+                    item.set_fontweight('black')
+                ax1.xaxis.offsetText.set_fontsize(fontsize)
+            if noylabels==None:
+                ax1.set_ylabel('Directional differential flux\n ['+pop_label+' cm$^{-2}$ s$^{-1}$ sr$^{-1}$ eV$^{-1}$]',fontsize=fontsize,weight='black')
+                for item in ax1.get_yticklabels():
+                    item.set_fontsize(fontsize)
+                    item.set_fontweight('black')
+                ax1.yaxis.offsetText.set_fontsize(fontsize)
+
           
             # Grid
-            plt.grid(color='grey',linestyle='-')
+            ax1.grid(color='grey',linestyle='-')
           
             # set axis exponent offset font sizes
             ax1.yaxis.offsetText.set_fontsize(fontsize)
             ax1.xaxis.offsetText.set_fontsize(fontsize)
+
+            if noxlabels!=None:
+                for label in ax1.xaxis.get_ticklabels():
+                    label.set_visible(False)
+            if noylabels!=None:
+                for label in ax1.yaxis.get_ticklabels():
+                    label.set_visible(False)  
                   
+
             # Add Vlasiator watermark
             if wmark!=None:        
                 wm = plt.imread(get_sample_data(watermarkimage))
@@ -666,18 +655,19 @@ def plot_prec_spectrum(filename=None,
                 newax.axis('off')
           
             # adjust layout
-            plt.tight_layout()
+            if axes==None:
+                plt.tight_layout()
           
           
             # Save output or draw on-screen
-            if draw==None:
+            if draw==None and axes==None:
                 print(savefigname+"\n")
                 plt.savefig(savefigname,dpi=300)
-            else:
+                plt.close()
+                plt.clf()
+            elif axes==None:
                 plt.draw()
                 plt.show()
-            plt.close()
-            plt.clf()
 
 
         # Determine sizes of the keogram array
@@ -738,7 +728,7 @@ def plot_prec_time_spectrum(filedir=None,
                      draw=None, usesci=None,
                      symlog=None,
                      colormap=None,
-                     run=None,notime=None,wmark=None,
+                     run=None,notitle=None,wmark=None,
                      notre=None, thick=1.0, cbtitle=None,
                      vmin=None, vmax=None, lin=None,
                      fmin=None, fmax=None, cbulk=None,
@@ -759,7 +749,7 @@ def plot_prec_time_spectrum(filedir=None,
 
     :kword colormap:    colour scale for plot, use e.g. jet, viridis, plasma, inferno, magma, nipy_spectral, RdBu
     :kword run:         run identifier, used for some default vmin,vmax values and for constructing output filename
-    :kword notime:      flag to suppress plotting simulation time in title
+    :kword notitle:      flag to suppress plotting simulation time in title
     :kword title:       string to use as title instead of map name
     :kword cbtitle:     string to use as colour bar title instead of map name
     :kword notre:       flag to use metres (if ==1) or kilometres as axis unit
@@ -859,7 +849,7 @@ def plot_prec_time_spectrum(filedir=None,
 
 
     # Plot title with time
-    if notime==None:        
+    if notitle==None:        
         timeval=f.read_parameter("time")
         if timeval == None:
             timeval=f.read_parameter("t")

@@ -690,9 +690,11 @@ def plot_colormapmxm(filename=None,
 
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_v = f.read_variable("v", cellids=cid)
-        ff_b = f.read_variable("B", cellids=cid)
-
+        ff_b = f.read_variable("B", cellids=cid)       
+        if f.check_variable("moments"): # restart file
+            ff_v = f.read_variable("restart_V", cellids=cid)            
+        else:
+            ff_v = f.read_variable("V", cellids=cid)
         # Account for movement
         bdirsign = -1.0 
         outofplane = [0,1,0] # For ecliptic runs
