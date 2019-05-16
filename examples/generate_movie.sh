@@ -1,9 +1,9 @@
 #!/bin/bash -l
-#SBATCH -t 00:40:00
+#SBATCH -t 00:08:00
 #SBATCH -J array_movie
 #SBATCH -p serial
 #SBATCH -n 1
-#SBATCH --array=0-200
+#SBATCH --array=0-299
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 #SBATCH --constraint=hsw
@@ -12,7 +12,7 @@
 # which renders multiple frames in order to e.g. make a movie.
 
 frameStart=2000  # set to initial frame
-frameEnd=2600 # set to the final frame
+frameEnd=4300 # set to the final frame
 
 # How many jobs? SLURM_ARRAY_TASK_COUNT does not work on all systems
 # so calculate job count (or set it manually to match the array
@@ -58,5 +58,5 @@ module load mayavi2
 #module load geo-env
 export PTNONINTERACTIVE=1 # Turns off x-windowing and Mayavi2 loading
 
-python generate_panel.py $start $end
+python make_animation_frames.py $start $end
 echo Job $SLURM_ARRAY_TASK_ID complete.

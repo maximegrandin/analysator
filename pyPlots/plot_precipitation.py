@@ -36,7 +36,7 @@ plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.ma
 # plt.register_cmap(name='cork',cmap=cork_map)
 # plt.register_cmap(name='davos_r',cmap=davos_r_map)
 
-global filedir_global, fluxfile
+global filedir_global, fluxdir_global, fluxfile
 global cellid_global
 global emin_global, emax_global
 global alph0_global, pop_global, hemisphere_global
@@ -685,7 +685,7 @@ def plot_prec_spectrum(filename=None,
 
 
 def make_keogram_column(step=None):
-    global alph0_global, linedipole_global
+    global alph0_global, linedipole_global, fluxdir_global
 
     filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
     fluxfile = fluxdir_global+'bulk.'+str(step).rjust(7,'0')+'.bin'
@@ -792,6 +792,7 @@ def plot_prec_time_spectrum(filedir=None,
     global linedipole_global
 
     filedir_global=filedir
+    fluxdir_global=fluxdir
     emin_global=emin
     emax_global=emax
 
