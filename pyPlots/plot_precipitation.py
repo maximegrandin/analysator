@@ -679,7 +679,7 @@ def plot_prec_spectrum(filename=None,
         datamap = np.transpose(datamap)
 
         # Save the keogram to file in case further processing is needed
-        datamap.dump(outputdir+'datamap_'+str(cellidplot[0]))
+        datamap.dump(outputdir+'datamap_cid'+str(cellidplot[0]))
         np.save(outputdir+'latitudes_keogram_'+str(cellidplot[0]),latitudes)
         np.save(outputdir+'energy_scale_'+str(cellidplot[0]),energy)
 
@@ -872,7 +872,7 @@ def plot_prec_time_spectrum(filedir=None,
         run='plot'
 
     # Output file name
-    savefigname = outputdir+run+"_prec_spec_time"+stepstr+"_"+str(cellidplot)+".png"
+    savefigname = outputdir+run+"_prec_spec_time"+stepstr+"_"+str(cellidplot[0])+".png"
 
 
     # If population isn't defined i.e. defaults to protons, check if 
@@ -1020,10 +1020,9 @@ def plot_prec_time_spectrum(filedir=None,
     ax1 = plt.gca() # get current axes
 
     # Save the keogram to file in case further processing is needed
-    datamap.dump(outputdir+'datamap_'+str(cellidplot[0]))
-    np.save(outputdir+'time_keogram_'+str(cellidplot[0]),time_keogram)
+    datamap.dump(outputdir+'datamap_cid'+str(cellidplot[0])+'_'+stepstr)
+    np.save(outputdir+'time_keogram_cid'+str(cellidplot[0])+'_'+stepstr,time_keogram)
     np.save(outputdir+'energy_scale_'+str(cellidplot[0]),energy)
-
 
     ax1.set_yscale("log")
 
