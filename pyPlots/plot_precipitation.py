@@ -72,11 +72,13 @@ def loss_cone_angle_dipole(cellcoord=None,cellcoordre=None,deg=False,linedipole=
         X = cellcoord[0]/Re
         Y = cellcoord[1]/Re
         Z = cellcoord[2]/Re
-
-    else:
+    elif cellcoordre!=None:
         X = cellcoordre[0]
         Y = cellcoordre[1]
         Z = cellcoordre[2]
+    else:
+        print('ERROR: Please provide cell coordinates')
+        return(0.,0.)
 
     # Calculation of R and L
     R = np.sqrt(X**2+Y**2+Z**2)                   # Radial distance to Earth centre
@@ -140,11 +142,13 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
         X = cellcoord[0]
         Y = cellcoord[1]
         Z = cellcoord[2]
-
-    else:
+    elif cellcoordre!=None:
         X = cellcoordre[0]*Re
         Y = cellcoordre[1]*Re
         Z = cellcoordre[2]*Re
+    else:
+        print('ERROR: Please provide cell coordinates')
+        return(0.,0.)
 
 
     # Read flux function from file
