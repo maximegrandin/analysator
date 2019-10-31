@@ -333,7 +333,6 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     normV = np.sqrt(VX**2+VY**2+Vpara**2)
     energy = 0.5*mass*normV**2/qe/1e3 # keV
 
-
     # Make the precipitating particle energy flux spectrum
     # -- limitation: low energies are not resolved due to very small pitch angles and finite velocity grid
     energy_bins = np.array([])
@@ -354,7 +353,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
 
         # -- Collect precipitating particles within energy range
         #    -- If cell in southern hemisphere, then losscone = pi - losscone, unless flg_antilosscone is True
-        if hemisphere=='south' != flg_antilosscone:    # equivalent to "hemisphere=='south' xor flg_antilosscone"
+        if (hemisphere=='south') != flg_antilosscone:    # equivalent to "hemisphere=='south' xor flg_antilosscone"
             ind_lc = ((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))
         else:
             ind_lc = ((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))
