@@ -349,15 +349,11 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         deltaE = 0.5*mass*((vel+deltaV)**2-vel**2)/qe/1.e3
 
         # -- Collect precipitating particles within energy range
-        #    -- If cell in southern hemisphere, then losscone = pi - losscone
-        if hemisphere=='south':
+        #    -- If cell in southern hemisphere, then losscone = pi - losscone, unless flg_antilosscone is True
+        if hemisphere=='south' != flg_antilosscone:    # equivalent to "hemisphere=='south' xor flg_antilosscone"
             ind_lc = ((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))
         else:
             ind_lc = ((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))
-
-        # If flg_antilosscone is activated, then looking inside pi - losscone
-        if flg_antilosscone:
-            ind_lc = ((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))
 
 #        # -- Calculation of integral value (for now assuming gyrotropy and low dependence on pitch angle inside loss cone)
 #        integral = (vel+deltaV/2.)**3*np.sum(f_sparse[ind_lc])*solid_angle
