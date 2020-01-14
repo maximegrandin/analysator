@@ -399,19 +399,23 @@ def plot_isosurface(filename=None,
     verts[:,1] = verts[:,1] + simext[2]
     verts[:,2] = verts[:,2] + simext[4]
 
-    # # Crop surface to box area
-    # verts = []
-    # faces = []
-    # for i in np.arange(len(verts_nocrop[:,0])):
-    #     if ((verts_nocrop[i,0] > boxcoords[0]) and (verts_nocrop[i,0] < boxcoords[1]) and
-    #         (verts_nocrop[i,1] > boxcoords[2]) and (verts_nocrop[i,1] < boxcoords[3]) and
-    #         (verts_nocrop[i,2] > boxcoords[4]) and (verts_nocrop[i,2] < boxcoords[5])):
-    #         verts.append(verts_nocrop[i,:])
-    #         faces.append(faces_nocrop[i,:]) # This is now incorrect
-    #     else:
-    #         dropped = dropped+1
-    # verts = np.asarray(verts)
-    # faces = np.asarray(faces)
+    # Crop surface to box area
+    if((len(boxm) == 6) or (len(boxre) == 6)):
+        mverts = np.ma.masked_array(verts)
+        mverts[:,0] = np.ma.masked_outside(mverts[:,0], boxcoords[0], boxcoords[1])
+        mverts[:,1] = np.ma.masked_outside(mverts[:,1], boxcoords[2], boxcoords[3])
+        mverts[:,2] = np.ma.masked_outside(mverts[:,2], boxcoords[4], boxcoords[5])
+        mverts   = np.ma.mask_rows(mverts)
+        mfaces   = np.ma.array(faces, mask=np.any(mverts[faces].mask, axis=1))
+        mnormals = np.ma.array(normals, mask=mverts.mask)
+
+        verts = mverts
+        faces = mfaces
+        normals = mnormals
+
+        for i,vertex in enumerate(verts):
+            if np.ma.is_masked(vertex):
+                verts.data[i,:] = 0.0
 
     # Next find color variable values at vertices
     if color_var != None:
