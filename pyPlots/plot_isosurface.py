@@ -94,6 +94,9 @@ def plot_isosurface(filename=None,
                     unit=None, thick=1.0,scale=1.0,
 
                     vmin=None, vmax=None, lin=None, symlog=None,
+
+                    scatterpoints=None, scvmin=0.0, scvmax=1.0,
+                    scsize=1.0, scmarker='X', sccmap='viridis'
                     ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -137,6 +140,14 @@ def plot_isosurface(filename=None,
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
     :kword nocb:        Set to suppress drawing of colourbar
+
+    :kword scatterpoints: path to an ascii file containing xyz coordinates of points to draw as a scatter plot, the fourth column should be a colourmappable scalar
+    :kword scvmin:      Scatter plot colour scale minimum, default 0.0
+    :kword scvmax:      Scatter plot colour scale maximum, default 1.0
+    :kword scsize:      Scatter plot marker size, default 1.0
+    :kword scmarker:    Scatter plot marker, default 'X'
+    :kword sccmap:      Scatter plot colour map, default 'viridis'
+
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -507,6 +518,14 @@ def plot_isosurface(filename=None,
         generatedsurface = ax1.plot_trisurf(verts[:,2], verts[:,0], verts[:,1], triangles=faces,
                                             cmap=cmapuse, norm=norm, vmin=vminuse, vmax=vmaxuse, 
                                             lw=0, shade=False, edgecolors=None, antialiased=False)
+
+        if scatterpoints!=None:
+            points = np.loadtxt(scatterpoints)
+            if not (points == 0).all():
+                pointscatter = ax1.scatter(points[:,2], points[:,0], points[:, 1], c=points[:,3], vmin=scvmin, vmax=scvmax, marker=scmarker, cmap=sccmap, s=scsize)
+            else:
+                pointscatter = ax1.scatter(0, 0, 0, c=[0], vmin=scvmin, vmax=scvmax, cmap="viridis_r", s=0)
+
         ax1.set_xlabel("z ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_ylabel("x ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_zlabel("y ["+unitstr+"]", fontsize=fontsize3)
@@ -524,6 +543,14 @@ def plot_isosurface(filename=None,
         generatedsurface = ax1.plot_trisurf(verts[:,0], verts[:,1], verts[:,2], triangles=faces,
                                             cmap=cmapuse, norm=norm, vmin=vminuse, vmax=vmaxuse, 
                                             lw=0.2, shade=False, edgecolors=None)
+
+        if scatterpoints!=None:
+            points = np.loadtxt(scatterpoints)
+            if not (points == 0).all():
+                pointscatter = ax1.scatter(scatterpoints[:,0], scatterpoints[:,1], scatterpoints[:, 2], c=scatterpoints[:,3], vmin=scvmin, vmax=scvmax, marker=scmarker, cmap=sccmap, s=scsize)
+            else:
+                pointscatter = ax1.scatter(0, 0, 0, c=[0], vmin=scvmin, vmax=scvmax, cmap="viridis_r", s=0)
+
         ax1.set_xlabel("x ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_ylabel("y ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_zlabel("z ["+unitstr+"]", fontsize=fontsize3)
@@ -535,6 +562,7 @@ def plot_isosurface(filename=None,
         ax1.set_zlim([midvals[2]-maxrange, midvals[2]+maxrange])
         ax1.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
 
+    generatedsurface.set_sort_zpos(-200)
 
     # Setting per-triangle colours for plot_trisurf needs to be done
     # as a separate set_array call.
