@@ -89,6 +89,8 @@ def plot_isosurface(filename=None,
                     draw=None, usesci=None,
                     #
                     boxm=[],boxre=[],
+                    periodic=[False, False, False],
+
                     colormap=None,
                     run=None,wmark=None, nocb=None,
                     unit=None, thick=1.0,scale=1.0,
@@ -120,6 +122,9 @@ def plot_isosurface(filename=None,
            
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
+
+    :kword periodic:    Is the system periodic in any of the three dimensions (default: [False, False, False]) 
+
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
     :kword run:         run identifier, used for constructing output filename
@@ -419,22 +424,44 @@ def plot_isosurface(filename=None,
 
     # Next find color variable values at vertices
     if color_var != None:
-        nverts = len(verts[:,0])
-        print("Extracting color values for "+str(nverts)+" vertices and "+str(len(faces[:,0]))+" faces.")
-        all_coords = np.empty((nverts, 3))
-        for i in np.arange(nverts):            
+        print("Extracting color values for "+str(len(verts[:,0]))+" vertices and "+str(len(faces[:,0]))+" faces.")
+        all_coords = np.ma.zeros(verts.shape)
+        for i,vert in enumerate(verts):
             # # due to mesh generation, some coordinates may be outside simulation domain
             # WARNING this means it might be doing wrong things in the periodic dimension of 2.9D runs.
-            coords = verts[i,:]*unit 
-            coords[0] = max(coords[0],simext_org[0]+0.1*cellsize)
-            coords[0] = min(coords[0],simext_org[1]-cellsize)
-            coords[1] = max(coords[1],simext_org[2]+0.1*cellsize)
-            coords[1] = min(coords[1],simext_org[3]-cellsize)
-            coords[2] = max(coords[2],simext_org[4]+0.1*cellsize)
-            coords[2] = min(coords[2],simext_org[5]-cellsize)
-            all_coords[i] = coords
-        # Use interpolated values, WARNING periodic y (2.9 polar) hard-coded here /!\
-        color_data = f.read_interpolated_variable(color_var, all_coords, operator=color_op, periodic=["False", "True", "False"])
+            coords = vert*unit
+            if np.ma.is_masked(coords):
+                all_coords[i,:] = np.ma.masked
+            else:
+                if periodic[0]:
+                    if coords[0] < simext_org[0]:
+                        coords[0] += simext_org[1] - simext_org[0]
+                    elif coords[0] > simext_org[1]:
+                        coords[0] -= simext_org[1] - simext_org[0]
+                else:
+                    coords[0] = max(coords[0],simext_org[0]+0.1*cellsize)
+                    coords[0] = min(coords[0],simext_org[1]-cellsize)
+                if periodic[1]:
+                    if coords[1] < simext_org[2]:
+                        coords[1] += simext_org[3] - simext_org[2]
+                    elif coords[1] > simext_org[3]:
+                        coords[1] -= simext_org[3] - simext_org[2]
+                else:
+                    coords[1] = max(coords[1],simext_org[2]+0.1*cellsize)
+                    coords[1] = min(coords[1],simext_org[3]-cellsize)
+                if periodic[2]:
+                    if coords[2] < simext_org[4]:
+                        coords[2] += simext_org[5] - simext_org[4]
+                    elif coords[2] > simext_org[5]:
+                        coords[2] -= simext_org[5] - simext_org[4]
+                else:
+                    coords[2] = max(coords[2],simext_org[4]+0.1*cellsize)
+                    coords[2] = min(coords[2],simext_org[5]-cellsize)
+                all_coords[i] = coords
+        
+        color_data = f.read_interpolated_variable(color_var, all_coords, operator=color_op, periodic=periodic)
+        color_data = np.ma.masked_invalid(color_data)
+
         # Make sure color data is 1-dimensional (e.g. magnitude of E instead of 3 components)
         if np.ndim(color_data)!=1:
             color_data=np.linalg.norm(color_data, axis=-1)

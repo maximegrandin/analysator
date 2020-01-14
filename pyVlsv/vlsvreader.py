@@ -851,10 +851,13 @@ class VlsvReader(object):
          
          # start iteration
          if value_length == 1:
-            ret_array = np.zeros(len(coordinates))
+            ret_array = np.ma.zeros(len(coordinates))
          else:
-            ret_array = np.zeros((len(coordinates), value_length))
+            ret_array = np.ma.zeros((len(coordinates), value_length))
          for i,cell_coords in enumerate(coordinates):
+            if np.ma.is_masked(cell_coords):
+               ret_array[i] = np.ma.masked
+               continue
             closest_cell_id=self.get_cellid(cell_coords)
             if closest_cell_id == 0:
                if value_length==1:
