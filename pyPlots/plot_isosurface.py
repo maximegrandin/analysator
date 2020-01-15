@@ -98,7 +98,8 @@ def plot_isosurface(filename=None,
                     vmin=None, vmax=None, lin=None, symlog=None,
 
                     scatterpoints=None, scvmin=0.0, scvmax=1.0,
-                    scsize=1.0, scmarker='X', sccmap='viridis'
+                    scsize=1.0, scmarker='X', sccmap='viridis',
+                    shear_var='None',dshear=1.0
                     ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -153,6 +154,8 @@ def plot_isosurface(filename=None,
     :kword scmarker:    Scatter plot marker, default 'X'
     :kword sccmap:      Scatter plot colour map, default 'viridis'
 
+    :kword shear_var:   If color_var is 'shear', define from which vector variable the shear angle must be calculated
+    :kword dshear:      If color_var is 'shear', distance away from each side of the isosurface at which shear_var values are taken to compute the shear angle
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -256,6 +259,8 @@ def plot_isosurface(filename=None,
     surf_varstr=surf_var.replace("/","_")
     if color_var!=None:
         color_varstr=color_var.replace("/","_")
+        if color_var=='shear':
+            color_varstr=color_varstr+shear_var
     else:
         color_varstr="solid"
     savefigname = outputdir+outputprefix+run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
@@ -325,7 +330,7 @@ def plot_isosurface(filename=None,
     simext=[i/unit for i in simext]
     boxcoords=[i/unit for i in boxcoords]
 
-    if color_op==None and color_var!=None:
+    if color_op==None and color_var!=None and color_var!='shear':
         color_op='pass'
         cb_title = color_var
         color_data = f.read_variable(color_var,cellids=[1,2])
@@ -334,6 +339,8 @@ def plot_isosurface(filename=None,
             cb_title = r"$|"+color_var+"|$"
     elif color_op!=None and color_var!=None:
         cb_title = r" $"+color_var+"_"+color_op+"$"
+    elif color_var=='shear':
+        cb_title = r" $"+shear_var+"$"+" shear angle [deg]"
     else: # color_var==None
         cb_title = ""
         nocb=1
@@ -424,9 +431,10 @@ def plot_isosurface(filename=None,
 
     # Next find color variable values at vertices
     if color_var != None:
+        nverts = len(verts[:,0])
         print("Extracting color values for "+str(len(verts[:,0]))+" vertices and "+str(len(faces[:,0]))+" faces.")
         all_coords = np.ma.zeros(verts.shape)
-        for i,vert in enumerate(verts):
+        for i,vert in enumerate(verts):            
             # # due to mesh generation, some coordinates may be outside simulation domain
             # WARNING this means it might be doing wrong things in the periodic dimension of 2.9D runs.
             coords = vert*unit
@@ -458,13 +466,22 @@ def plot_isosurface(filename=None,
                     coords[2] = max(coords[2],simext_org[4]+0.1*cellsize)
                     coords[2] = min(coords[2],simext_org[5]-cellsize)
                 all_coords[i] = coords
-        
-        color_data = f.read_interpolated_variable(color_var, all_coords, operator=color_op, periodic=periodic)
-        color_data = np.ma.masked_invalid(color_data)
 
-        # Make sure color data is 1-dimensional (e.g. magnitude of E instead of 3 components)
-        if np.ndim(color_data)!=1:
-            color_data=np.linalg.norm(color_data, axis=-1)
+        if color_var!='shear':
+            color_data = f.read_interpolated_variable(color_var, all_coords, operator=color_op, periodic=periodic)
+            color_data = np.ma.masked_invalid(color_data)
+        else: # Case when the variable is the shear angle
+            # WARNING: this assumes that the isosurface is for the dayside magnetopause (i.e., normal direction is towards upstream)
+            upstream_data = f.read_interpolated_variable(shear_var, coords+dshear*normals, periodic=["False", "True", "False"])
+            downstream_data = f.read_interpolated_variable(shear_var, coords-dshear*normals, periodic=["False", "True", "False"])
+            cos_data = np.ma.sum(upstream_data * downstream_data, axis=-1)
+            cos_data = np.ma.divide(cos_data, np.linalg.norm(upstream_data, axis=-1))
+            cos_data = np.ma.divide(cos_data, np.linalg.norm(downstream_data, axis=-1))
+            color_data = np.ma.arccos(cos_data) * 180./np.pi
+
+    print(cos_data.shape)
+    print(np.ma.min(cos_data), np.ma.max(cos_data))
+    print(np.ma.min(color_data), np.ma.max(color_data))
 
     if color_var==None:
         # dummy norm
