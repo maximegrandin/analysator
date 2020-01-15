@@ -480,10 +480,6 @@ def plot_isosurface(filename=None,
             cos_data = np.ma.divide(cos_data, np.linalg.norm(downstream_data, axis=-1))
             color_data = np.ma.arccos(cos_data) * 180./np.pi
 
-    print(cos_data.shape)
-    print(np.ma.min(cos_data), np.ma.max(cos_data))
-    print(np.ma.min(color_data), np.ma.max(color_data))
-
     if color_var==None:
         # dummy norm
         print("No surface color given, using dummy setup")
@@ -569,7 +565,14 @@ def plot_isosurface(filename=None,
         if scatterpoints!=None:
             points = np.loadtxt(scatterpoints)
             if not (points == 0).all():
-                pointscatter = ax1.scatter(points[:,2], points[:,0], points[:, 1], c=points[:,3], vmin=scvmin, vmax=scvmax, marker=scmarker, cmap=sccmap, s=scsize)
+                B1   = f.read_interpolated_variable("B",   points*Re - dshear, operator="magnitude", periodic=periodic)
+                B2   = f.read_interpolated_variable("B",   points*Re + dshear, operator="magnitude", periodic=periodic)
+                V1   = f.read_interpolated_variable("v",   points*Re - dshear, operator="magnitude", periodic=periodic)
+                V2   = f.read_interpolated_variable("v",   points*Re + dshear, operator="magnitude", periodic=periodic)
+                rho1 = f.read_interpolated_variable("rho", points*Re - dshear,                       periodic=periodic)
+                rho2 = f.read_interpolated_variable("rho", points*Re + dshear,                       periodic=periodic)
+                CSE = B1 * B2 * (rho1 * V1 + rho2 * V2) / (rho1 * B2 + rho2 * B1 )
+                pointscatter = ax1.scatter(points[:,2], points[:,0], points[:, 1], c=CSE, vmin=scvmin, vmax=scvmax, marker=scmarker, cmap=sccmap, s=scsize)
             else:
                 pointscatter = ax1.scatter(0, 0, 0, c=[0], vmin=scvmin, vmax=scvmax, cmap="viridis_r", s=0)
 
