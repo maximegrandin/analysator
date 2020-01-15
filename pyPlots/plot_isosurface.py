@@ -72,7 +72,7 @@ plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colorma
 
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
+    a, b = '{:.2e}'.format(x).split('e')
     b = int(b)
     return r'${}\times10^{{{}}}$'.format(a, b)
 
@@ -573,6 +573,8 @@ def plot_isosurface(filename=None,
                 rho2 = f.read_interpolated_variable("rho", points*Re + dshear,                       periodic=periodic)
                 CSE = B1 * B2 * (rho1 * V1 + rho2 * V2) / (rho1 * B2 + rho2 * B1 )
                 pointscatter = ax1.scatter(points[:,2], points[:,0], points[:, 1], c=CSE, vmin=scvmin, vmax=scvmax, marker=scmarker, cmap=sccmap, s=scsize)
+                cbscatter = fig.colorbar(pointscatter,ticks=[-0.003, -0.002, -0.001, 0, 0.001, 0.002, 0.003, 0.004, 0.005], drawedges=False, shrink=0.8)#, fraction=0.1, pad=0.1)
+                cbscatter.ax.set_title("RX rate",fontsize=fontsize2,fontweight='bold')
             else:
                 pointscatter = ax1.scatter(0, 0, 0, c=[0], vmin=scvmin, vmax=scvmax, cmap="viridis_r", s=0)
 
@@ -590,7 +592,7 @@ def plot_isosurface(filename=None,
         ax1.set_xmargin(0)
         ax1.set_ymargin(0)
         ax1.set_zmargin(0)
-        ax1.dist = 7
+        ax1.dist = 9
         ax1.set_aspect(1.0)
         ax1.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
 
@@ -655,7 +657,7 @@ def plot_isosurface(filename=None,
         if usesci==0:        
             cb = fig.colorbar(generatedsurface,ticks=ticks, drawedges=False, fraction=0.023, pad=0.02)
         else:
-            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(fmt),drawedges=False, fraction=0.046, pad=0.04)
+            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(fmt),drawedges=False, fraction=0.15, shrink=0.8)
 
         if len(cb_title_use)!=0:
             cb.ax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')
