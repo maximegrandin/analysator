@@ -27,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import proj3d
 from matplotlib import cm
 from skimage import measure
 
@@ -551,14 +552,12 @@ def plot_isosurface(filename=None,
         print("Selected color range: "+str(vminuse)+" to "+str(vmaxuse))
 
     # Create 300 dpi image of suitable size
-    fig = plt.figure(figsize=[4.0,4.0],dpi=300)
-    #ax1 = fig.gca(projection='3d')
-    ax1 = fig.add_subplot(111, projection='3d')
+    fig = plt.figure(figsize=[10,6],dpi=300)
+    ax1 = Axes3D(fig)
 
     # Generate virtual bounding box to get equal aspect
     maxrange = np.array([boxcoords[1]-boxcoords[0], boxcoords[3]-boxcoords[2], boxcoords[5]-boxcoords[4]]).max() / 2.0
     midvals = np.array([boxcoords[1]+boxcoords[0], boxcoords[3]+boxcoords[2], boxcoords[5]+boxcoords[4]]) / 2.0
-
 
     # Three options:
     # 2.9D ecliptic, 2.9D polar, or 3D
@@ -580,12 +579,18 @@ def plot_isosurface(filename=None,
 
 
         # Set camera angle
-        ax1.view_init(elev=30., azim=90)
+        ax1.view_init(elev=20, azim=90)
         # Set virtual bounding box
-        ax1.set_xlim([midvals[2]-maxrange, midvals[2]+maxrange])
-        ax1.set_ylim([midvals[0]-maxrange, midvals[0]+maxrange])
-        ax1.set_zlim([midvals[1]-maxrange, midvals[1]+maxrange])
+        ax1.set_xlim3d([boxcoords[4], boxcoords[5]])
+        ax1.set_ylim3d([boxcoords[0], boxcoords[1]])
+        ax1.set_zlim3d([boxcoords[2], boxcoords[3]])
+        ax1.set_xmargin(0)
+        ax1.set_ymargin(0)
+        ax1.set_zmargin(0)
+        ax1.dist = 7
+        ax1.set_aspect(1.0)
         ax1.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+
         
     else: # 3D or 2.9D ecliptic, leave as is
         generatedsurface = ax1.plot_trisurf(verts[:,0], verts[:,1], verts[:,2], triangles=faces,
@@ -617,7 +622,7 @@ def plot_isosurface(filename=None,
     if color_var != None:
         # Find face-averaged colors
         # (simply setting the array to color_data failed for some reason)
-        colors = np.mean(color_data[faces], axis=1)
+        colors = np.ma.mean(color_data[faces], axis=1)
         generatedsurface.set_array(colors)
         
     # Title and plot limits
@@ -674,16 +679,14 @@ def plot_isosurface(filename=None,
                     label.set_visible(False)
 
     # Add Vlasiator watermark
-    if wmark!=None:        
+    if wmark!=None:
         wm = plt.imread(get_sample_data(watermarkimage))
         newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
         newax.imshow(wm)
         newax.axis('off')
 
-    plt.tight_layout()
     savefig_pad=0.1 # The default is 0.1
     bbox_inches=None
-
 
     # Save output or draw on-screen
     if draw==None:
