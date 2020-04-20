@@ -657,7 +657,7 @@ def plot_isosurface(filename=None,
         if usesci==0:        
             cb = fig.colorbar(generatedsurface,ticks=ticks, drawedges=False, fraction=0.023, pad=0.02)
         else:
-            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(fmt),drawedges=False, fraction=0.15, shrink=0.8)
+            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(fmt),drawedges=False, fraction=0.15, shrink=1.)
 
         if len(cb_title_use)!=0:
             cb.ax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')
